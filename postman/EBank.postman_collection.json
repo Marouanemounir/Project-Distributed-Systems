@@ -195,6 +195,45 @@
           ]
         }
       ]
+    },
+    {
+      "name": "Agent IA",
+      "item": [
+        {
+          "name": "Demander la liste des clients",
+          "request": {
+            "method": "GET",
+            "url": "{{gateway}}/EBANK-BOT/chat?query=Liste%20les%20clients"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Demander les comptes",
+          "request": {
+            "method": "GET",
+            "url": "{{gateway}}/EBANK-BOT/chat?query=Liste%20les%20comptes%20bancaires"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }

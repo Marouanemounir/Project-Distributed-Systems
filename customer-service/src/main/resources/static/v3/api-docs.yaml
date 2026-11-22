@@ -1,0 +1,70 @@
+openapi: 3.0.3
+info:
+  title: Customer Service
+  version: 1.0.0
+servers:
+  - url: .
+paths:
+  /customers:
+    get:
+      summary: Lister les clients
+      responses:
+        '200':
+          description: Liste des résultats
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Customer'
+    post:
+      summary: Créer une ressource
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerRequest'
+      responses:
+        '201':
+          description: Ressource créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '400':
+          description: Saisie invalide
+  /customers/{id}:
+    get:
+      summary: Rechercher par identifiant
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Ressource trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '404':
+          description: Ressource introuvable
+components:
+  schemas:
+    CustomerRequest:
+      type: object
+      required: [name, email]
+      properties:
+        name: { type: string, example: Nora, maxLength: 120 }
+        email: { type: string, format: email, example: nora@example.test }
+    Customer:
+      allOf:
+        - $ref: '#/components/schemas/CustomerRequest'
+        - type: object
+          properties:
+            id:
+              type: integer
+

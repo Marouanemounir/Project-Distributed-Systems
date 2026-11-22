@@ -1,0 +1,84 @@
+openapi: 3.0.3
+info:
+  title: EBank Service
+  version: 1.0.0
+servers:
+  - url: .
+paths:
+  /accounts:
+    get:
+      summary: Lister les comptes
+      responses:
+        '200':
+          description: Liste des résultats
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Account'
+    post:
+      summary: Créer une ressource
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountRequest'
+      responses:
+        '201':
+          description: Ressource créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          description: Saisie invalide
+        '422':
+          description: Client introuvable
+        '503':
+          description: Impossible de vérifier le client
+  /accounts/{id}:
+    get:
+      summary: Rechercher par identifiant
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Ressource trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '404':
+          description: Ressource introuvable
+components:
+  schemas:
+    AccountRequest:
+      type: object
+      required: [balance, type, customerId]
+      properties:
+        balance: { type: number, minimum: 0, multipleOf: 0.01, example: 450.75 }
+        type: { type: string, enum: [CURRENT_ACCOUNT, SAVING_ACCOUNT] }
+        customerId: { type: integer, minimum: 1, example: 1 }
+    Account:
+      allOf:
+        - $ref: '#/components/schemas/AccountRequest'
+        - type: object
+          properties:
+            id:
+              type: string
+            createdAt:
+              type: string
+              format: date-time
+            customer:
+              type: object
+              nullable: true
+              properties:
+                id: { type: integer }
+                name: { type: string }
+                email: { type: string }

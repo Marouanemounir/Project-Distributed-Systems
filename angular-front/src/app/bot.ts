@@ -59,16 +59,16 @@ export class Bot {
     this.sawDone = false;
     const params = { query, conversationId: this.conversationId };
     const endpoint = gateway + '/EBANK-BOT';
-    const complete = finalize(() => this.working.set(false));
+    const complete = () => this.working.set(false);
     if (!this.live) {
       this.request = this.http.get(endpoint + '/chat', { params, responseType: 'text' }).pipe(
-        takeUntilDestroyed(this.destroyRef), complete
+        takeUntilDestroyed(this.destroyRef), finalize(complete)
       ).subscribe({ next: answer => this.answer.set(answer), error: error => this.error.set(apiError(error)) });
       return;
     }
     this.request = this.http.get(endpoint + '/chat-stream', {
       params, responseType: 'text', observe: 'events', reportProgress: true,
-    }).pipe(takeUntilDestroyed(this.destroyRef), complete).subscribe({
+    }).pipe(takeUntilDestroyed(this.destroyRef), finalize(complete)).subscribe({
       next: event => {
         if (event.type === HttpEventType.DownloadProgress && event.partialText !== undefined) {
           this.process(event.partialText);

@@ -1,0 +1,15 @@
+body { background:#f3f6fa; color:#182936; font-family:system-ui,sans-serif; }
+.site-header { background:#122b3b; color:#f2f8fb; position:relative; }
+.site-header a { color:#dbe9f0; text-decoration:none; border-radius:.45rem; padding:.5rem .72rem; }
+.site-header .brand { font-size:1.28rem; font-weight:750; padding-left:0; color:#fff; }
+.site-header .active, .site-header nav a:hover { background:#2c4d61; color:#fff; }
+.activity { position:absolute; top:100%; right:1rem; color:#125579; z-index:2; padding:.5rem; }
+h1 { font-size:clamp(1.7rem,4vw,2.5rem); letter-spacing:-.035em; font-weight:760; }
+.panel { background:#fff; border:1px solid #dbe4ea; border-radius:.85rem; padding:clamp(1rem,3vw,1.75rem); }
+.table { vertical-align:middle; }
+.amount { white-space:nowrap; font-variant-numeric:tabular-nums; }
+.account-id { overflow-wrap:anywhere; font-size:.86rem; }
+.btn-primary { --bs-btn-bg:#125579; --bs-btn-border-color:#125579; --bs-btn-hover-bg:#0e4563; }
+markdown { display:block; overflow-x:auto; }
+markdown table { width:100%; margin-bottom:1rem; }
+markdown :is(td,th) { border:1px solid #dbe4ea; padding:.45rem; }

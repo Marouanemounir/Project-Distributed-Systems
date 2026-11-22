@@ -1,0 +1,24 @@
+openapi: 3.0.3
+info:
+  title: EBank Bot
+  version: 1.0.0
+servers:
+  - url: /
+paths:
+  /chat:
+    get:
+      summary: Interroger l'agent EBank
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema: { type: string, maxLength: 4000, example: "Liste les clients" }
+        - name: conversationId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Réponse de l'agent
+          content:
+            text/plain:
+              schema: { type: string }

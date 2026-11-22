@@ -6,6 +6,7 @@ import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 
 @Service
 class EBankAIAgent {
@@ -29,6 +30,10 @@ class EBankAIAgent {
 
     String chat(Prompt prompt, String conversationId) {
         return request(prompt, conversationId).call().content();
+    }
+
+    Flux<String> chatStream(Prompt prompt, String conversationId) {
+        return request(prompt, conversationId).stream().content();
     }
 
     private ChatClient.ChatClientRequestSpec request(Prompt prompt, String conversationId) {

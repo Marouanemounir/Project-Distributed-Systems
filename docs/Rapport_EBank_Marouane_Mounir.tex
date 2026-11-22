@@ -1,0 +1,180 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage[a4paper,margin=24mm]{geometry}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{booktabs,tabularx,array}
+\usepackage{fancyhdr}
+\usepackage[hidelinks]{hyperref}
+\definecolor{Navy}{HTML}{173047}
+\definecolor{Blue}{HTML}{176B87}
+\definecolor{Pale}{HTML}{E9F3F7}
+\hypersetup{pdftitle={Projet EBank - Systèmes Distribués et DevOps},pdfauthor={Marouane Mounir}}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small\color{Navy} ENSET Mohammedia \enspace|\enspace II-BDCC}
+\rhead{\small\color{Navy} Projet EBank}
+\cfoot{\small\thepage}
+\setlength{\headheight}{15pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\panne}{\textit{Not Available}}
+\newcommand{\step}[2]{\textcolor{Blue}{\textbf{#1}}\par #2\par}
+\begin{document}
+\begin{titlepage}
+\centering
+{\large\bfseries\color{Navy} UNIVERSITÉ HASSAN II DE CASABLANCA\par}
+\vspace{4mm}
+{\large École Normale Supérieure de l'Enseignement Technique\\de Mohammedia\par}
+\vspace{5mm}
+{\small Département Mathématiques et Informatique\par}
+\vspace{15mm}
+{\color{Blue}\rule{0.82\linewidth}{1.2pt}\par}
+\vspace{9mm}
+{\Large Rapport de projet de synthèse\par}
+\vspace{6mm}
+{\Huge\bfseries\color{Navy} EBank\par}
+\vspace{6mm}
+{\Large Architecture microservices et assistant bancaire\par}
+\vspace{3mm}
+{\large Spring Cloud, Spring AI, MCP et Angular\par}
+\vspace{9mm}
+{\color{Blue}\rule{0.82\linewidth}{1.2pt}\par}
+\vspace{10mm}
+{\large Module Systèmes Distribués et DevOps\par}
+{\large Filière II-BDCC\par}
+{\small Ingénierie Informatique : Big Data et Cloud Computing\par}
+\vfill
+\begin{tabularx}{0.82\linewidth}{@{}YY@{}}
+\textbf{Réalisé par} & \textbf{Encadré par}\\[4pt]
+Marouane Mounir & Professeur Mohamed YOUSSFI
+\end{tabularx}
+\vfill
+{\large Année universitaire 2026--2027\par}
+\end{titlepage}
+
+\section*{Résumé}
+EBank est un projet de synthèse qui applique une architecture de microservices à un jeu de données bancaire fictif. Deux services gèrent les clients et les comptes. Eureka assure leur découverte, Spring Cloud Gateway expose un point d'entrée commun et Resilience4j maintient la consultation des comptes lors d'une panne du service client. Un agent Spring AI utilise les outils Model Context Protocol (MCP) exposés par les deux services. Il répond via REST, Telegram et Discord. Un client Angular 21 présente les comptes, permet leur création et affiche en continu les réponses du chatbot.
+
+\textbf{Mots-clés} \enspace Microservices, Eureka, OpenFeign, Resilience4j, Spring AI, MCP, Angular, SSE.
+
+\tableofcontents
+
+\clearpage
+\section{Contexte et architecture}
+Le projet s'appuie sur le support de synthèse du professeur Mohamed YOUSSFI et les trois séances vidéo. Il met en œuvre le suivi d'un client et de ses comptes, puis expose les mêmes opérations à un assistant conversationnel. Les branches Git suivent l'ordre des séances et les étapes se cumulent.
+
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}llY@{}}
+\toprule
+\textbf{Composant} & \textbf{Port} & \textbf{Responsabilité}\\
+\midrule
+Config Server & 8888 & Paramètres communs servis depuis un dépôt natif.\\
+Discovery Service & 8761 & Registre Eureka et découverte des instances.\\
+Gateway Service & 9999 & Routage dynamique des requêtes REST et SSE.\\
+Customer Service & 8056 & Clients, API REST et outils MCP.\\
+EBank Service & 8057 & Comptes, accès client via Feign et outils MCP.\\
+EBank Bot & 8058 & Agent Spring AI, REST, Telegram et Discord.\\
+Frontend Angular & 4200 & Liste, détail, création de comptes et assistant.\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Flux entre composants}
+\step{Consultation bancaire}{Angular envoie une requête à la gateway. Eureka fournit l'adresse de l'instance. Pour le détail d'un compte, EBank Service interroge Customer Service avec OpenFeign et enrichit la réponse.}
+\step{Question au chatbot}{Le canal reçoit une question et transmet le prompt à l'agent. Le modèle sélectionne les outils MCP appropriés. Le client MCP appelle les services concernés et l'agent transmet la réponse au canal d'origine.}
+\step{Réponse en continu}{Le bot produit des événements \code{chunk}, puis \code{done}. Angular concatène les fragments et actualise le rendu Markdown. Un événement \code{failure} présente l'erreur si la génération est interrompue côté serveur.}
+
+\subsection{Environnement de développement}
+Le backend est un projet Maven multi-modules sous Java 21, Spring Boot 3.5.16, Spring Cloud 2025.0.3 et Spring AI 1.1.8. Les versions correctives présentes sur la machine ont été retenues pour compiler le projet. Le frontend repose sur Angular 21.2, Bootstrap et ngx-markdown.
+
+\clearpage
+\section{Partie 1 — Microservices et résilience}
+\subsection{Modèle et API métier}
+Chaque service métier utilise sa propre base H2 en mémoire. Customer Service stocke l'identifiant, le nom et l'adresse électronique. EBank Service stocke l'UUID, le type, le solde, la date de création et l'identifiant du titulaire. Le solde est représenté par \code{BigDecimal}. Le client enrichi est un objet transitoire. Les données initiales contiennent trois clients et quinze comptes.
+
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}llY@{}}
+\toprule
+\textbf{Méthode} & \textbf{Ressource locale} & \textbf{Résultat attendu}\\
+\midrule
+GET & \code{/customers}, \code{/accounts} & Liste des clients ou des comptes.\\
+GET & \code{/customers/\{id\}}, \code{/accounts/\{id\}} & Détail de la ressource ou HTTP 404.\\
+POST & \code{/customers}, \code{/accounts} & HTTP 201 si création et HTTP 400 si saisie invalide.\\
+POST & \code{/accounts} & HTTP 422 pour un client absent et HTTP 503 si le service client est indisponible.\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Découverte, routage et circuit breaker}
+La gateway résout les services enregistrés dans Eureka. Le préfixe de route désigne le service, comme \code{/EBANK-SERVICE/accounts}. L'appel Feign utilise également le nom déclaré dans Eureka. Le Config Server fournit les paramètres communs depuis des fichiers inclus dans son module.
+
+Le circuit \code{customerService} observe quatre appels. Lorsque le taux d'échec atteint 50\,\%, il s'ouvre pendant dix secondes avant de laisser passer deux appels de vérification. Une consultation renvoie toujours le compte et fournit un titulaire marqué \panne{} pendant la panne. La création exige la validation du titulaire. Une réponse 404 de Customer Service indique un client absent et est ignorée dans le calcul du taux d'échec.
+
+\subsection{Protocole de reproduction}
+Importer la collection Postman et jouer les requêtes dans l'ordre. La requête de liste stocke l'UUID du premier compte. Consulter le détail, arrêter Customer Service, puis répéter la consultation. Vérifier le titulaire de repli et le refus de création. Redémarrer le service, attendre la découverte et la réouverture du circuit, puis vérifier le retour du titulaire. Swagger UI permet d'exécuter séparément les opérations des deux services.
+
+\clearpage
+\section{Partie 2 — Agent et canaux de messagerie}
+\subsection{Serveurs MCP et outils}
+Customer Service et EBank Service publient chacun un endpoint \code{/mcp} avec transport Streamable HTTP. Les outils de liste, de consultation et de création délèguent aux mêmes services métier que les contrôleurs REST. Les entrées des outils de création passent par la même validation des contraintes.
+
+Un client MCP peut se connecter aux ports 8056 et 8057, lister les outils, puis appeler \code{getAllCustomers} et \code{getAllBankAccounts}. Les requêtes de détail et de création permettent ensuite de contrôler le contrat et les validations.
+
+\subsection{Agent Spring AI}
+L'agent utilise \code{ChatClient}, un modèle OpenAI et le fournisseur de callbacks MCP. Les instructions système demandent de consulter les outils pour toute donnée bancaire et de créer une ressource uniquement sur demande explicite. La mémoire conserve le contexte à l'aide d'un identifiant de conversation. REST, Telegram et Discord utilisent des espaces de noms distincts.
+
+\subsection{Intégration des canaux}
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}lYY@{}}
+\toprule
+\textbf{Canal} & \textbf{Transport} & \textbf{Scénario de démonstration}\\
+\midrule
+REST & HTTP, \code{GET /chat} & Demander la liste des clients avec Postman.\\
+Telegram & Bot API et long polling & Envoyer une question privée, puis une photo avec une légende.\\
+Discord & Gateway WebSocket et API REST & Envoyer une commande \code{!ebank} dans un canal autorisé ou une question privée.\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Les jetons sont lus dans l'environnement d'exécution. Le bot Telegram envoie une indication de saisie puis transmet la réponse. Discord ignore les messages des bots et limite la longueur de chaque envoi.
+
+\section{Partie 3 — Interface web et flux SSE}
+L'interface Angular regroupe la liste des comptes, leur détail et un formulaire de création. Les Signal Forms gèrent la validation locale. Un intercepteur incrémente et décrémente un compteur réactif de requêtes pour maintenir l'indicateur de chargement pendant les appels concurrents. La gateway autorise l'origine locale du frontend.
+
+Le chatbot offre une réponse standard et une réponse en direct. En mode direct, le client traite les événements de progression HTTP et attend la fin de chaque trame SSE avant de lire son contenu JSON. Ce découpage préserve les retours à la ligne du Markdown même lorsque les fragments réseau se terminent au milieu d'une trame.
+
+\clearpage
+\section{Validation et limites}
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}YY@{}}
+\toprule
+\textbf{Vérification} & \textbf{Résultat observé}\\
+\midrule
+Compilation et empaquetage Maven & Les modules Java ont été compilés et empaquetés avec Java 21 sur les trois branches.\\
+Démarrage et tests HTTP locaux & Une restriction de l'environnement interdit les connexions de boucle locale. Les scénarios Postman, Swagger UI, MCP et SSE sont documentés.\\
+Canaux externes & Les essais réels exigent une clé OpenAI et des jetons Telegram et Discord valides.\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+En local, les adresses d'écoute sont limitées à la boucle locale par défaut. Les données de démonstration sont réinitialisées au redémarrage. La démonstration n'emploie que des identités fictives.
+
+\section{Conclusion}
+Le projet relie découverte de services, échanges REST, résistance à la panne et outils MCP dans une même application. EBank Service conserve la responsabilité des comptes et de leur validation, même lorsqu'une opération provient de l'agent ou du frontend. Les trois branches permettent d'étudier chaque étape et de rejouer ses scénarios.
+
+\section*{Références}
+\begin{enumerate}
+\item Mohamed YOUSSFI. \textit{Projet de synthèse — Spring Boot, Spring Cloud, Agentic AI}. Support du module, ENSET Mohammedia.
+\item Mohamed YOUSSFI. \textit{La Totale Architectures Micro-services}. \href{https://www.youtube.com/watch?v=cdFz3VemT1Q}{Partie 1}, \href{https://www.youtube.com/watch?v=JHvxSZTWSsY}{partie 2}, \href{https://www.youtube.com/watch?v=wDheR7_2jkQ}{partie 3}.
+\item \href{https://docs.spring.io/spring-ai/reference/1.1/api/mcp/mcp-streamable-http-server-boot-starter-docs.html}{Spring AI 1.1 — Serveur MCP Streamable HTTP}.
+\item \href{https://v21.angular.dev/guide/forms/signals/form-logic}{Angular 21 — Signal Forms}.
+\item \href{https://core.telegram.org/bots/api}{Telegram Bot API} et \href{https://docs.discord.com/developers/events/gateway}{Discord Developer Documentation}.
+\item \href{https://github.com/Marouanemounir/Project-Distributed-Systems}{Dépôt GitHub EBank}.
+\end{enumerate}
+\end{document}

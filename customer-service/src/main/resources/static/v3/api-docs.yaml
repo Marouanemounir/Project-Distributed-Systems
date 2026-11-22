@@ -3,7 +3,7 @@ info:
   title: Customer Service
   version: 1.0.0
 servers:
-  - url: .
+  - url: ..
 paths:
   /customers:
     get:

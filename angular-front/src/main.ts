@@ -1,5 +1,5 @@
 import { bootstrapApplication } from '@angular/platform-browser';
-import { provideHttpClient, withInterceptors, withXhr } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 import { provideMarkdown } from 'ngx-markdown';
 import { App } from './app/app';
@@ -9,7 +9,7 @@ import { loadingInterceptor } from './app/api';
 
 bootstrapApplication(App, {
   providers: [
-    provideHttpClient(withXhr(), withInterceptors([loadingInterceptor])),
+    provideHttpClient(withInterceptors([loadingInterceptor])),
     provideMarkdown(),
     provideRouter([
       { path: '', pathMatch: 'full', redirectTo: 'accounts' },
